@@ -26,7 +26,7 @@ def genetic_algorithm(d, bases, origin, basis, alpha_n = 0):
             if j == 0:
                 axis1 = random.randint(0, 2)
                 axis2 = random.randint(0, 2)
-                length = random.choice([random.uniform(0.2, 0.6), random.uniform(3,6)])
+                length = 3 + random.uniform(0, 3)
                 vars[pos[i]] = [0, axis1, length, axis2]
             elif j == 1:
                 axis = random.randint(0, 2)
@@ -192,7 +192,7 @@ def genetic_algorithm(d, bases, origin, basis, alpha_n = 0):
     CXPB, MUTPB, NGEN = 0.5, 0.2, 5
 
     # Initialize population
-    population = toolbox.population(n=200)
+    population = toolbox.population(n=50)
 
     # Begin the genetic algorithm evolution process
     for generation in range(NGEN):
@@ -258,27 +258,43 @@ def gradient(ind, d, bases, origin, basis, alpha_n = 0):
         for i in range(len(individual)):
             if i not in indices:
                 gradient.append(0)
-                continue
-            # Create a copy of the individual for perturbation
-            individual_plus_h = individual[:]
-            individual_minus_h = individual[:]
-            
-            # Perturb the ith element
-            individual_plus_h[i] += h
-            individual_minus_h[i] -= h
-            
-            # Compute the numerical gradient using central difference
-            grad_i = (evaluate(individual_plus_h)[0] - evaluate(individual_minus_h)[0]) / (2 * h)
-            gradient.append(grad_i)
+            else:
+                # Create a copy of the individual for perturbation
+                individual_plus_h = individual[:]
+                individual_minus_h = individual[:]
+                
+                # Perturb the ith element
+                individual_plus_h[i] += h
+                individual_minus_h[i] -= h
+                print(individual_plus_h)
+                
+                # Compute the numerical gradient using central difference
+                grad_i = (evaluate(individual_plus_h)[0] - evaluate(individual_minus_h)[0]) / (2 * h)
+                gradient.append(grad_i)
         return gradient
 
-    def gradient_descent(individual, learning_rate=0.4, steps=100):
+    def gradient_descent(individual, learning_rate=1, steps=10):
         indices = [4*i+2 for i in range(len(individual)//4)]
-        for _ in range(10):
+        for _ in range(steps):
+            print("Step: ", _)
             gradient = numerical_gradient(individual, indices)  # Numerical gradient
+            print(gradient)
+            if np.linalg.norm(gradient) < 1e-5:
+                break
             gradient = gradient / np.linalg.norm(gradient)  # Normalize the gradient
-            for i in indices:
-                individual[i] = max(individual[i] - learning_rate * gradient[i], 0)
+            print(gradient)
+            f = np.inf
+            prev = np.copy(individual)
+            prev_f = evaluate(individual)
+            while f > prev_f[0]:
+                individual = np.copy(prev)
+                for i in indices:
+                    individual[i] = max(individual[i] - learning_rate * gradient[i], 0)
+                f = evaluate(individual)[0]
+                learning_rate *= 0.7
+                print(f)
+                print(individual)
+                
         return individual
     
     def f(vars):
@@ -295,9 +311,7 @@ def gradient(ind, d, bases, origin, basis, alpha_n = 0):
             if vars[0] == 0:
                 var = vars[:4]
                 length = var[2]
-                if type(var[3]) != int or type(var[1]) != int:
-                    return 100000,
-                links.append(RevoluteJoint(axis[var[1]], length, r, axis[var[3]]))
+                links.append(RevoluteJoint(axis[int(var[1])], length, r, axis[int(var[3])]))
                 if norm == 1:
                     lengths += abs(length)
                 else:
@@ -307,10 +321,8 @@ def gradient(ind, d, bases, origin, basis, alpha_n = 0):
             elif vars[0] == 1:
                 var = vars[:4]
                 length = var[2]
-                if type(var[1]) != int:
-                    return 100000,
                 dmax = var[3]
-                links.append(PrismaticJoint(axis[var[1]], length, r, dmax))
+                links.append(PrismaticJoint(axis[int(var[1])], length, r, dmax))
                 if norm == 1:
                     lengths += abs(length)
                     lengths += abs(dmax)
@@ -323,9 +335,7 @@ def gradient(ind, d, bases, origin, basis, alpha_n = 0):
             else:
                 var = vars[:5]
                 length = var[4]
-                if type(var[2]) != int or type(var[1]) != int:
-                    return 100000,
-                links.append(Flip(axis[var[1]], var[3], length, r, axis[var[2]]))
+                links.append(Flip(axis[int(var[1])], var[3], length, r, axis[int(var[2])]))
                 if norm == 1:
                     lengths += abs(length)
                 else:

@@ -1,7 +1,7 @@
 
 from setup import *
 
-def display(best_individual, reachable_points, wall, base, origin, basis, shapes, limits, points = True, ani = False):
+def display(best_individual, reachable_points, wall, base, origin, basis, shapes, limits, no = False, points = True, ani = False):
     r = 0.1
     vars = best_individual
     links = []
@@ -9,33 +9,41 @@ def display(best_individual, reachable_points, wall, base, origin, basis, shapes
     n = 0
     n_flip = 0
     lengths = 0
+    l2 = 0
     while len(vars) > 4:
         if vars[0] == 0:
             var = vars[:4]
             length = var[2]
-            links.append(RevoluteJoint(axis[var[1]], length, r, axis[var[3]]))
+            links.append(RevoluteJoint(axis[int(var[1])], length, r, axis[int(var[3])]))
             lengths += length
+            l2 += length**2
             n+=1
             vars = vars[4:]
         elif vars[0] == 1:
             var = vars[:4]
             length = var[2]
             dmax = var[3]
-            links.append(PrismaticJoint(axis[var[1]], length, r, dmax))
+            links.append(PrismaticJoint(axis[int(var[1])], length, r, dmax))
             lengths += length
+            l2 += length**2
             lengths += dmax
+            l2 += dmax**2
             n+=1
             vars = vars[4:]
         else:
             var = vars[:5]
             length = var[4]
-            links.append(Flip(axis[var[1]], var[3], length, r, axis[var[2]]))
-            lengths += length**2
+            links.append(Flip(axis[int(var[1])], var[3], length, r, axis[int(var[2])]))
+            lengths += length
+            l2 += length**2
             n_flip+=1
             vars = vars[5:]
     thetas = [0 for i in range(n)]
     robot = Robot(base, origin, basis, links, thetas)
     print("Length of the robot: ", lengths)
+    print("Square of the length of the robot: ", l2)
+    print("Number of dofs: ", n)
+    print("Number of flips: ", n_flip)
     j = ""
     for link in links:
         if link.type == "revolute":
@@ -45,10 +53,13 @@ def display(best_individual, reachable_points, wall, base, origin, basis, shapes
         else:
             j += "F"
     print(j)
-    if points:
-        robot.points_plot(reachable_points, wall, shapes, limits, ani)
+    if no:
+        pass
     else:
-        robot.interactive_plot()
+        if points:
+            robot.points_plot(reachable_points, wall, shapes, limits, ani)
+        else:
+            robot.interactive_plot()
 
 def generate_trajectory(time_steps=50):
     """

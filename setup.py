@@ -853,5 +853,9 @@ class Robot:
                 new_val = (current_val + 1) % len(reachable_points)
                 sliders[0].set_val(new_val)
 
-            ani = FuncAnimation(fig, increment_slider, interval=100)
+            # ani = FuncAnimation(fig, increment_slider, interval=100)
+            # ani.save('test.gif', writer='imagemagick', fps=10)
+            ani = FuncAnimation(fig, increment_slider, frames=np.arange(len(reachable_points)), interval=100)
+            ani.save('robot_movement.gif', writer='ffmpeg', fps=5)
+
         plt.show()
